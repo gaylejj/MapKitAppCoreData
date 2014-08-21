@@ -8,6 +8,7 @@
 
 import UIKit
 import MapKit
+import CoreData
 
 class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDelegate, UITextFieldDelegate {
     
@@ -18,6 +19,8 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
     @IBOutlet weak var longTextField: UITextField!
     
     let locationManager = CLLocationManager()
+    
+    var myContext : NSManagedObjectContext!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -43,7 +46,55 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
         
         println(CLLocationManager.authorizationStatus().toRaw())
         
+        var longPress = UILongPressGestureRecognizer(target: self, action: "mapPressed:")
+        self.mapView.addGestureRecognizer(longPress)
+        self.mapView.delegate = self
+        
+        var appDelegate = UIApplication.sharedApplication().delegate as AppDelegate
+        self.myContext = appDelegate.managedObjectContext
+        
         // Do any additional setup after loading the view, typically from a nib.
+    }
+    
+    func mapPressed(sender : UILongPressGestureRecognizer) {
+        switch sender.state {
+        case .Began:
+            println("Began")
+            
+            //Figuring out where they touched the map View
+            var touchPoint = sender.locationInView(self.mapView)
+            var touchCoordinate = self.mapView.convertPoint(touchPoint, toCoordinateFromView: self.mapView)
+            
+            //Setting our pin
+            var annotation = MKPointAnnotation()
+            annotation.coordinate = touchCoordinate
+            annotation.title = "Add Reminder"
+            self.mapView.addAnnotation(annotation)
+            
+        case .Changed:
+            println("Changed")
+        case .Ended:
+            println("Ended")
+            
+            var touchPoint = sender.locationInView(self.mapView)
+            var touchCoordinate = self.mapView.convertPoint(touchPoint, toCoordinateFromView: self.mapView)
+            
+            var newReminder = NSEntityDescription.insertNewObjectForEntityForName("Reminder", inManagedObjectContext: self.myContext) as Reminder
+            newReminder.lat = touchCoordinate.latitude
+            newReminder.long = touchCoordinate.longitude
+            newReminder.message = "Blank Message"
+            println(newReminder.lat)
+            println(newReminder.long)
+            
+            var error : NSError?
+            self.myContext.save(&error)
+            if error != nil {
+                println(error?.localizedDescription)
+            }
+            self.performSegueWithIdentifier("showReminders", sender: self)
+        default:
+            println("default")
+        }
     }
     
     override func didReceiveMemoryWarning() {
@@ -65,6 +116,10 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
         
         self.mapView.setRegion(region, animated: true)
         
+    }
+    
+    @IBAction func showRemindersPressed(sender: AnyObject) {
+        self.performSegueWithIdentifier("showReminders", sender: self)
     }
     
     
@@ -95,6 +150,40 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
     func textFieldShouldReturn(textField: UITextField!) -> Bool {
         textField.resignFirstResponder()
         return true
+    }
+    
+    //MARK: MKMapView Delegate Methods
+    func mapView(mapView: MKMapView!, viewForAnnotation annotation: MKAnnotation!) -> MKAnnotationView! {
+        //First try to dequeue old annotation
+        if let annotationView = mapView.dequeueReusableAnnotationViewWithIdentifier("Pin") as? MKPinAnnotationView {
+            self.configureAnnotation(annotationView)
+            return annotationView
+        } else {
+            // If don't get one back, create a new one with identifier
+            var annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "Pin")
+            self.configureAnnotation(annotationView)
+            return annotationView
+        }
+    }
+    
+    //Configure Annotation Method
+    func configureAnnotation(annotationView: MKPinAnnotationView) {
+        annotationView.animatesDrop = true
+        annotationView.canShowCallout = true
+        
+        //Configure callout
+        var rightButton = UIButton.buttonWithType(UIButtonType.ContactAdd) as UIButton
+        annotationView.rightCalloutAccessoryView = rightButton
+    }
+    
+    
+    //Listen for entering/leaving region
+    func locationManager(manager: CLLocationManager!, didEnterRegion region: CLRegion!) {
+        println("Entered Region")
+    }
+    
+    func locationManager(manager: CLLocationManager!, didExitRegion region: CLRegion!) {
+        println("Exited Region")
     }
     
     
