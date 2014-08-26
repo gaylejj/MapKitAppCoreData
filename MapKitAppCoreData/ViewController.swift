@@ -22,6 +22,9 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
     
     var myContext : NSManagedObjectContext!
     
+    var beaconRegion : CLBeaconRegion!
+    let uuID = NSUUID(UUIDString: "B9407F30-F5F8-466E-AFF9-25556B57FE6D")
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -35,6 +38,7 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
             self.locationManager.startUpdatingLocation()
         case .AuthorizedWhenInUse:
             println("Authorized when in use")
+            self.locationManager.startUpdatingLocation()
         case .NotDetermined:
             println("Not determined")
             self.locationManager.requestWhenInUseAuthorization()
@@ -52,6 +56,9 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
         
         var appDelegate = UIApplication.sharedApplication().delegate as AppDelegate
         self.myContext = appDelegate.managedObjectContext
+        
+        //FIX: Change to elevator uuid
+        self.beaconRegion = CLBeaconRegion(proximityUUID: uuID, identifier: "org.codefellows.east_room")
         
         // Do any additional setup after loading the view, typically from a nib.
     }
@@ -176,14 +183,34 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
         annotationView.rightCalloutAccessoryView = rightButton
     }
     
+    func mapView(mapView: MKMapView!, annotationView view: MKAnnotationView!, calloutAccessoryControlTapped control: UIControl!) {
+        var annotation = view.annotation
+        
+        self.locationManager.startMonitoringForRegion(self.beaconRegion)
+        
+    }
     
     //Listen for entering/leaving region
     func locationManager(manager: CLLocationManager!, didEnterRegion region: CLRegion!) {
         println("Entered Region")
+        
+        var notification = UILocalNotification()
+        notification.alertBody = "You entered the East Room!"
+        notification.alertAction = "Click here!"
+        notification.soundName = UILocalNotificationDefaultSoundName
+        
+        UIApplication.sharedApplication().presentLocalNotificationNow(notification)
     }
     
     func locationManager(manager: CLLocationManager!, didExitRegion region: CLRegion!) {
         println("Exited Region")
+        
+        var notification = UILocalNotification()
+        notification.alertBody = "You have exited the East Room!"
+        notification.alertAction = "Click here!"
+        notification.soundName = UILocalNotificationDefaultSoundName
+        
+        UIApplication.sharedApplication().presentLocalNotificationNow(notification)
     }
     
     
