@@ -9,8 +9,9 @@
 import UIKit
 import MapKit
 import CoreData
+import CoreBluetooth
 
-class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDelegate, UITextFieldDelegate {
+class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDelegate, UITextFieldDelegate, CBPeripheralManagerDelegate {
     
     @IBOutlet weak var mapView: MKMapView!
     
@@ -21,8 +22,10 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
     let locationManager = CLLocationManager()
     
     var myContext : NSManagedObjectContext!
+    var peripheralManager : CBPeripheralManager!
     
     var beaconRegion : CLBeaconRegion!
+    var beaconData : NSDictionary!
     let uuID = NSUUID(UUIDString: "B9407F30-F5F8-466E-AFF9-25556B57FE6D")
     
     override func viewDidLoad() {
@@ -59,8 +62,20 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
         
         //FIX: Change to elevator uuid
         self.beaconRegion = CLBeaconRegion(proximityUUID: uuID, identifier: "org.codefellows.east_room")
+        self.beaconData = self.beaconRegion.peripheralDataWithMeasuredPower(nil)
+        self.peripheralManager = CBPeripheralManager(delegate: self, queue: nil)
         
         // Do any additional setup after loading the view, typically from a nib.
+    }
+    
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
+        self.locationManager.startRangingBeaconsInRegion(self.beaconRegion)
+    }
+    
+    override func viewWillDisappear(animated: Bool) {
+        super.viewWillDisappear(animated)
+        self.locationManager.stopRangingBeaconsInRegion(self.beaconRegion)
     }
     
     func mapPressed(sender : UILongPressGestureRecognizer) {
@@ -211,6 +226,18 @@ class ViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDele
         notification.soundName = UILocalNotificationDefaultSoundName
         
         UIApplication.sharedApplication().presentLocalNotificationNow(notification)
+    }
+    
+    func peripheralManagerDidUpdateState(peripheral: CBPeripheralManager!) {
+        var state = peripheral.state
+        switch state {
+        case .PoweredOn:
+            self.peripheralManager.startAdvertising(self.beaconData)
+        case .PoweredOff:
+            self.peripheralManager.stopAdvertising()
+        default:
+            println("Try again")
+        }
     }
     
     
