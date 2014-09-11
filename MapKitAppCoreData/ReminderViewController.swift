@@ -53,14 +53,14 @@ class ReminderViewController: UIViewController, NSFetchedResultsControllerDelega
     
     //MARK: UITableView Methods
     
-    func tableView(tableView: UITableView!, cellForRowAtIndexPath indexPath: NSIndexPath!) -> UITableViewCell! {
+    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = self.tableView.dequeueReusableCellWithIdentifier("reminderCell", forIndexPath: indexPath) as ReminderTableViewCell
         self.configureCell(cell, forIndexPath: indexPath)
         return cell
     }
     
     func configureCell(cell: ReminderTableViewCell, forIndexPath indexPath: NSIndexPath) {
-        var reminder = self.fetchedResultsController.fetchedObjects[indexPath.row] as Reminder
+        var reminder = self.fetchedResultsController.fetchedObjects![indexPath.row] as Reminder
         var nf = NSNumberFormatter()
         nf.maximumFractionDigits = 2
         nf.minimumFractionDigits = 2
@@ -72,8 +72,8 @@ class ReminderViewController: UIViewController, NSFetchedResultsControllerDelega
         cell.longLabel.text = nf.stringFromNumber(reminder.long)
     }
     
-    func tableView(tableView: UITableView!, numberOfRowsInSection section: Int) -> Int {
-        return self.fetchedResultsController.sections[section].numberOfObjects
+    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return self.fetchedResultsController.sections![section].numberOfObjects
     }
     
     //MARK: Tableview options (Delete/More)
@@ -85,14 +85,14 @@ class ReminderViewController: UIViewController, NSFetchedResultsControllerDelega
     func tableView(tableView: UITableView!, editActionsForRowAtIndexPath indexPath: NSIndexPath!) -> [AnyObject]! {
         
         let deleteAction = UITableViewRowAction(style: UITableViewRowActionStyle.Default, title: "Delete") { (action: UITableViewRowAction!, indexPath: NSIndexPath!) -> Void in
-            if let reminderForRow = self.fetchedResultsController.fetchedObjects[indexPath.row] as? Reminder {
+            if let reminderForRow = self.fetchedResultsController.fetchedObjects![indexPath.row] as? Reminder {
                 self.myContext.deleteObject(reminderForRow)
                 self.myContext.save(nil)
             }
         }
         
         let editAction = UITableViewRowAction(style: UITableViewRowActionStyle.Default, title: "Edit") { (action: UITableViewRowAction!, indexPath: NSIndexPath!) -> Void in
-            if let reminderForRow = self.fetchedResultsController.fetchedObjects[indexPath.row] as? Reminder {
+            if let reminderForRow = self.fetchedResultsController.fetchedObjects![indexPath.row] as? Reminder {
                 self.indexPath = indexPath
                 self.performSegueWithIdentifier("editReminder", sender: self)
             }
@@ -111,10 +111,10 @@ class ReminderViewController: UIViewController, NSFetchedResultsControllerDelega
     
     
     
-    override func prepareForSegue(segue: UIStoryboardSegue!, sender: AnyObject!) {
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject!) {
         if segue.identifier == "editReminder" {
             let editVC = segue.destinationViewController as EditReminderViewController
-            var reminder = self.fetchedResultsController.fetchedObjects[self.indexPath!.row] as Reminder
+            var reminder = self.fetchedResultsController.fetchedObjects![self.indexPath!.row] as Reminder
             editVC.reminder = reminder
             self.tableView.deselectRowAtIndexPath(self.indexPath!, animated: true)
         }

@@ -36,7 +36,7 @@ class EditReminderViewController: UIViewController {
         
         reminder.message = self.messageTextField.text
         reminder.managedObjectContext.save(nil)
-        self.navigationController.popViewControllerAnimated(true)
+        self.navigationController!.popViewControllerAnimated(true)
     
     }
 
